@@ -138,7 +138,7 @@ def iterate_post():
                     print(f"{Fore.LIGHTBLACK_EX}{to18('Unquote URL')}{Style.RESET_ALL} /{match[0]}/{match[1]}.{match[2]}")
                     add_event("post.content.rename", {'file':filename, 'content':f"{match[0]}/{match[1]}.{match[2]}", 'value':pathname})
 
-                if not valid_hex8(match[1]):
+                if not valid_hex8(match[1]) or match[0] != sugg_slug or not valid_hex8(sugg_slug):
                     if image_ref.get(pathname, False):
                         print(f"{Fore.LIGHTBLACK_EX}{to18('Duplicated Refactor')}{Style.RESET_ALL}{Fore.BLUE}\"{rf_frontmatter[config['url_slug']]:8}\"{Style.RESET_ALL}{Fore.LIGHTBLACK_EX} At {filename}{Style.RESET_ALL}")
                         continue
