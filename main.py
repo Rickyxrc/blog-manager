@@ -1,6 +1,7 @@
-import os, yaml, frontmatter, random, re
+import os, yaml, frontmatter, random, re, json
 from colorama import Style, Fore, just_fix_windows_console
 from urllib.parse import unquote, quote
+import datetime
 import argparse
 
 just_fix_windows_console()
@@ -49,6 +50,7 @@ registered_refactor_method_print['post.frontmatter.change'] = lambda x : f"Chang
 registered_refactor_method_print['post.content.rename']     = lambda x : f"Rename {Fore.RED}\"{x['content']}\"{Style.RESET_ALL} in post {Fore.LIGHTBLACK_EX}\"{x['file']}\"{Style.RESET_ALL} to {Fore.GREEN}\"{x['value']}\"{Style.RESET_ALL}"
 registered_refactor_method_print['dir.empty.del']           = lambda x : f"Delete empty dir {Fore.RED}\"{x['path']}\"{Style.RESET_ALL}"
 registered_refactor_method_print['danger.exec']             = lambda x : (f"\"cd {x['path']} && {x['precommit']}\" exited with code ") + str(os.system(f'\"cd {x["path"]} && {x["precommit"]}\"')>>8)
+registered_refactor_method_print['file.init']               = lambda x : f"Create {Fore.GREEN}{x['file']}{Style.RESET_ALL}"
 
 def print_refactor_event(event_name:str, param:dict, preview:bool = True):
     if preview:
@@ -73,6 +75,7 @@ registered_refactor_method['file.rename']             = lambda x : registered_re
 registered_refactor_method['post.content.rename']     = lambda x : write_content(x['file'], frontmatter.dumps(frontmatter.load(open(x['file'], encoding = 'utf-8'))).replace(x['content'], x['value']))
 registered_refactor_method['dir.empty.del']           = lambda x : os.rmdir(x['path'])
 registered_refactor_method['danger.exec']             = lambda x : os.system(f"cd {x['path']} && {x['commit']}")
+registered_refactor_method['file.init']               = lambda x : open(x['file'], 'w', encoding='utf-8').write(x['content'])
 
 def do_refactor_event(event_name:str, param:dict):
     print_refactor_event(event_name, param, False)
@@ -109,7 +112,7 @@ def add_event(event_name:str, param:dict):
 
 def refactor_post_slug(filename, source, slug):
     print(f"{Fore.LIGHTBLACK_EX}{to18('Scanning')}{Style.RESET_ALL}", end='\r')
-    add_event("post.frontmatter.change", {'file':filename, 'key':'postSlug', 'value':slug})
+    add_event("post.frontmatter.change", {'file':filename, 'key':config['url_slug'], 'value':slug})
     add_event("post.content.rename", {'file':filename, 'content':source, 'value':slug})
 
 def iterate_post():
@@ -121,11 +124,11 @@ def iterate_post():
 
             print(f"{Fore.LIGHTBLACK_EX}{to18('Scanning')}\"{filename}\"{Style.RESET_ALL}")
             rf_frontmatter = frontmatter.load(rf)
-            sugg_slug = rf_frontmatter['postSlug']
-            if not valid_hex8(rf_frontmatter['postSlug']):
+            sugg_slug = rf_frontmatter[config['url_slug']]
+            if not valid_hex8(rf_frontmatter[config['url_slug']]):
                 sugg_slug = rnd8()
-                print(f"{Fore.BLUE}{to18('Incorrect SLUG')}{Style.RESET_ALL}{Fore.BLUE}\"{rf_frontmatter['postSlug']:8}\"{Style.RESET_ALL}{Fore.LIGHTBLACK_EX} At {filename}{Style.RESET_ALL}")
-                refactor_post_slug(filename, rf_frontmatter['postSlug'], sugg_slug)
+                print(f"{Fore.BLUE}{to18('Incorrect SLUG')}{Style.RESET_ALL}{Fore.BLUE}\"{rf_frontmatter[config['url_slug']]:8}\"{Style.RESET_ALL}{Fore.LIGHTBLACK_EX} At {filename}{Style.RESET_ALL}")
+                refactor_post_slug(filename, rf_frontmatter[config['url_slug']], sugg_slug)
             re_content = re.findall(rf'\({config["image_base_url"]}(\S+)/(\S+)\.(png|jpg|jpeg)', rf_frontmatter.content)
             for match in re_content:
                 print(f"{Fore.LIGHTBLACK_EX}{to18('Referenced Image')}{Style.RESET_ALL} /{unquote(match[0])}/{unquote(match[1])}.{match[2]}")
@@ -137,7 +140,7 @@ def iterate_post():
 
                 if not valid_hex8(match[1]):
                     if image_ref.get(pathname, False):
-                        print(f"{Fore.LIGHTBLACK_EX}{to18('Duplicated Refactor')}{Style.RESET_ALL}{Fore.BLUE}\"{rf_frontmatter['postSlug']:8}\"{Style.RESET_ALL}{Fore.LIGHTBLACK_EX} At {filename}{Style.RESET_ALL}")
+                        print(f"{Fore.LIGHTBLACK_EX}{to18('Duplicated Refactor')}{Style.RESET_ALL}{Fore.BLUE}\"{rf_frontmatter[config['url_slug']]:8}\"{Style.RESET_ALL}{Fore.LIGHTBLACK_EX} At {filename}{Style.RESET_ALL}")
                         continue
                     image_ref[pathname] = True
                     print(f"{match[1]}")
@@ -173,9 +176,24 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=f"blog-manager, A light tool to fix your blog image links", prog='main.py')
     operations = parser.add_mutually_exclusive_group(required=False)
     operations.add_argument('--no-confirm', action='store_true', help = "auto accept all changes (NOT safe)")
+    operations.add_argument('--new-post', action='store_true', help = "create a new post")
     arg = parser.parse_args()
 
-    iterate_post()
-    do_refactor()
-    clear_empty_dir()
-    commit()
+    if arg.new_post:
+        name = input('post name:')
+        front_matter = frontmatter.loads('')
+        front_matter.metadata = {
+            'title' : name,
+            config['url_slug'] : rnd8(),
+            'description' : input("description:"),
+            'pubDatetime' : datetime.datetime.now() #.strftime("%Y-%m-%d %H:%M:%S")
+        }
+        add_event('file.init', {'file' : os.path.join(config['blog_path'], f'{name}.md'), 'content' : frontmatter.dumps(front_matter)})
+        confirm_refactor()
+        exit(0)
+    else:
+        iterate_post()
+        do_refactor()
+        clear_empty_dir()
+        commit()
+        exit(0)
