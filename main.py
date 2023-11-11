@@ -177,6 +177,7 @@ if __name__ == '__main__':
     operations = parser.add_mutually_exclusive_group(required=False)
     operations.add_argument('--no-confirm', action='store_true', help = "auto accept all changes (NOT safe)")
     operations.add_argument('--new-post', action='store_true', help = "create a new post")
+    parser.add_argument('--commit', action='store_true', help = "commit after operations")
     arg = parser.parse_args()
 
     if arg.new_post:
@@ -186,14 +187,14 @@ if __name__ == '__main__':
             'title' : name,
             config['url_slug'] : rnd8(),
             'description' : input("description:"),
-            'pubDatetime' : datetime.datetime.now() #.strftime("%Y-%m-%d %H:%M:%S")
+            'pubDatetime' : datetime.datetime.now()
         }
         add_event('file.init', {'file' : os.path.join(config['blog_path'], f'{name}.md'), 'content' : frontmatter.dumps(front_matter)})
         confirm_refactor()
-        exit(0)
     else:
         iterate_post()
         do_refactor()
         clear_empty_dir()
-        commit()
         exit(0)
+    if arg.commit:
+        commit()
