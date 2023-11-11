@@ -2,6 +2,7 @@
 # https://github.com/Rickyxrc/blog-manager
 
 blogmanager:
+  url_slug: postSlug                 # front-matter 中控制 url 的项目
   blog_path: P:\ath\to\markdown\root # Markdown 文件的根目录（绝对路径）
   image_path: P:\ath\to\image\root   # 图片的根目录（绝对路径）
   image_base_url: https://path-to-image-root # 图片访问的根目录
