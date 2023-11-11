@@ -132,6 +132,10 @@ def iterate_post():
             re_content = re.findall(rf'\({config["image_base_url"]}(\S+)/(\S+)\.(png|jpg|jpeg)', rf_frontmatter.content)
             for match in re_content:
                 print(f"{Fore.LIGHTBLACK_EX}{to18('Referenced Image')}{Style.RESET_ALL} /{unquote(match[0])}/{unquote(match[1])}.{match[2]}")
+                if not os.path.exists(os.path.join(config['image_path'], f"{unquote(match[0])}/{unquote(match[1])}.{match[2]}")):
+                    print(f"{Fore.RED}{to18('Non-exist Image Reference')}{Style.RESET_ALL} {Fore.BLUE}{unquote(match[0])}/{unquote(match[1])}.{match[2]}{Style.RESET_ALL}")
+                    print(f"{Fore.RED}blog-manager CAN\'T fix non-exist Image reference, please delete it manually.{Style.RESET_ALL}")
+                    exit(0)
                 pathname = f"{unquote(match[0])}/{unquote(match[1])}.{match[2]}"
 
                 if unquote(match[0]) != match[0] or unquote(match[1]) != match[1]:
