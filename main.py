@@ -195,6 +195,5 @@ if __name__ == '__main__':
         iterate_post()
         do_refactor()
         clear_empty_dir()
-        exit(0)
     if arg.commit:
         commit()
