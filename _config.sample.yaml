@@ -1,0 +1,19 @@
+# 自动管理 Blog 和引用图片并修复的小程序
+# https://github.com/Rickyxrc/blog-manager
+
+blogmanager:
+  blog_path: P:\ath\to\markdown\root # Markdown 文件的根目录（绝对路径）
+  image_path: P:\ath\to\image\root   # 图片的根目录（绝对路径）
+  image_base_url: https://path-to-image-root # 图片访问的根目录
+  commands:
+    blog:
+      path: # 命令执行位置（绝对路径）
+      precommit: git diff                    # 显示 Blog 差异
+      commit: git commit && git push         # 提交 Blog 更改
+    image:
+      path: # 命令执行位置（绝对路径）
+      precommit: rclone sync . cdn:/blog --dry-run # 显示图片差异
+      commit: rclone sync . cdn:/blog              # 提交图片更改
+    other_commit: # 可以添加任意多项，但是必须要有 path 项和 commit 项。
+      path: ...
+      commit: ...
